@@ -1,6 +1,8 @@
 import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { ProductService } from './product.service';
-import { JwtAuthGuard } from 'src/auth/strategies/jwt-auth-guard';
+// import { JwtAuthGuard } from 'src/auth/strategies/jwt-auth-guard';
+import { JwtAuthGuard } from '../auth/strategies/jwt-auth-guard'; 
+// (Folder structure ke hisab se `../` adjust kar lein)
 import { Product } from './product.entity';
 import { CreateProductDto } from './product-dto';
 
