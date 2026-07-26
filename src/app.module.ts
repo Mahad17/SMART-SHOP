@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import * as pg from 'pg';
+
 import { AuthModule } from './auth/auth.module';
 import { User } from './auth/entities/user.entity';
 import { AuthController } from './auth/auth.controller';
@@ -18,11 +20,14 @@ import { WalletService } from './wallet/wallet.service';
 @Module({
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt' }),
-        JwtModule.register({
-          secret: 'SUPER_SECRET_KEY_123', // Real app mein isey .env file mein rakhein
-          signOptions: { expiresIn: '7d' }, // Token 7 din tak valid rahega
-        }),
-    // .env variables load karne ke liye
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_SECRET', 'SUPER_SECRET_KEY_123'),
+        signOptions: { expiresIn: '7d' },
+      }),
+    }),
     ConfigModule.forRoot({
       isGlobal: true,
     }),
@@ -33,29 +38,26 @@ import { WalletService } from './wallet/wallet.service';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
-        host: configService.get<string>('DATABASE_HOST'),
-        port: configService.get<number>('DATABASE_PORT'),
-        username: configService.get<string>('DATABASE_USERNAME'),
-        password: configService.get<string>('DATABASE_PASSWORD'),
-        database: configService.get<string>('DATABASE_NAME'),
-        schema: configService.get<string>('DATABASE_SCHEMA'),
-        autoLoadEntities: true, // Entities automatic load ho jayengi
+        driver: pg,
+        url: configService.get<string>('DATABASE_URL'),
+        schema: 'public',
+        autoLoadEntities: true,
         synchronize: false,
         ssl: {
-          rejectUnauthorized: false,
+          rejectUnauthorized: false, // Forces connection to ignore SSL cert chain errors
         },
-
-        entities:[
-          User,Product,Transaction
-        ] // Active development ke liye true (migrations khud handle karega)
+        extra: {
+          ssl: {
+            rejectUnauthorized: false,
+          },
+        },
+        entities: [User, Product, Transaction],
       }),
     }),
-        TypeOrmModule.forFeature([
-          User,Product,Transaction
-        ]),
+    TypeOrmModule.forFeature([User, Product, Transaction]),
     AuthModule,
   ],
-  controllers: [AuthController,ProductController,WalletController],
-  providers: [AuthService,EmailService,ProductService,JwtService,WalletService],
+  controllers: [AuthController, ProductController, WalletController],
+  providers: [AuthService, EmailService, ProductService, JwtService, WalletService],
 })
 export class AppModule {}
