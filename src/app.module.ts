@@ -16,6 +16,8 @@ import { PassportModule } from '@nestjs/passport';
 import { Transaction } from './transaction/transaction.entity';
 import { WalletController } from './wallet/wallet.controller';
 import { WalletService } from './wallet/wallet.service';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 
 @Module({
   imports: [
@@ -57,7 +59,7 @@ import { WalletService } from './wallet/wallet.service';
     TypeOrmModule.forFeature([User, Product, Transaction]),
     AuthModule,
   ],
-  controllers: [AuthController, ProductController, WalletController],
-  providers: [AuthService, EmailService, ProductService, JwtService, WalletService],
+  controllers: [AppController, AuthController, ProductController, WalletController],
+  providers: [AppService, AuthService, EmailService, ProductService, JwtService, WalletService],
 })
 export class AppModule {}
