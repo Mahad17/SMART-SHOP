@@ -40,8 +40,11 @@ import { WalletService } from './wallet/wallet.service';
         database: configService.get<string>('DATABASE_NAME'),
         schema: configService.get<string>('DATABASE_SCHEMA'),
         autoLoadEntities: true, // Entities automatic load ho jayengi
-        synchronize: true,
-        
+        synchronize: false,
+        ssl: {
+          rejectUnauthorized: false,
+        },
+
         entities:[
           User,Product,Transaction
         ] // Active development ke liye true (migrations khud handle karega)
