@@ -12,7 +12,7 @@ export class AuthController {
   @Post('signup')
   @HttpCode(HttpStatus.CREATED)
   signup(@Body() signupDto: SignupDto) {
-        console.log('signup hit');
+    console.log('signup hit');
 
     return this.authService.signup(signupDto);
   }
@@ -21,23 +21,22 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   login(@Body() loginDto: LoginDto) {
     console.log('login hit');
-    
+
     return this.authService.login(loginDto);
   }
-  // src/auth/auth.controller.ts mein post mapping add karein:
 
-@Post('resend-otp')
-@HttpCode(HttpStatus.OK)
-resendOtp(@Body('email') email: string) {
-          console.log('resend otp hit');
+  @Post('resend-otp')
+  @HttpCode(HttpStatus.OK)
+  resendOtp(@Body('email') email: string) {
+    console.log('resend otp hit');
 
-  return this.authService.resendOtp(email);
-}
+    return this.authService.resendOtp(email);
+  }
 
   @Post('verify-otp')
   @HttpCode(HttpStatus.OK)
   verifyOtp(@Body() verifyOtpDto: VerifyOtpDto) {
-        console.log('verify otp hit');
+    console.log('verify otp hit');
 
     return this.authService.verifyOtp(verifyOtpDto);
   }
