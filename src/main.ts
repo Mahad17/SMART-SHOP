@@ -31,16 +31,11 @@ export const createNestServer = async (expressInstance: express.Express) => {
   await app.init();
 };
 
-// Bootstrap for local development
-if (!process.env.VERCEL) {
-  createNestServer(server).then(() => {
-    server.listen(3000, () => {
-      console.log('Backend is running on http://localhost:3000');
-    });
+// Bootstrap the server
+createNestServer(server).then(() => {
+  server.listen(3000, () => {
+    console.log('Backend is running on http://localhost:3000');
   });
-} else {
-  // Lazy-initialize Nest app for Vercel Serverless
-  createNestServer(server);
-}
+});
 
 export default server;
