@@ -49,47 +49,44 @@ export class AuthService {
 
     // 2. LOGIN API (Triggers OTP)
     async login(loginDto: LoginDto) {
-        const { email, password, role } = loginDto;
+    const { email, password, role } = loginDto;
 
-        const user = await this.userRepository.findOne({ where: { email: email.toLowerCase() } });
-        if (!user) {
-            throw new UnauthorizedException('Invalid credentials');
-        }
-
-        // STRICT ROLE VALIDATION: User mobile app par login kare aur Admin web portal par
-        if (user.role !== role) {
-            throw new UnauthorizedException(`Access denied. Accessing with invalid role privileges.`);
-        }
-
-        // Check Password
-        const isPasswordMatch = await bcrypt.compare(password, user.passwordHash);
-        if (!isPasswordMatch) {
-            throw new UnauthorizedException('Invalid credentials');
-        }
-
-        // Generate 4-digit secure OTP
-        const otp = Math.floor(1000 + Math.random() * 9000).toString();
-        const expiry = new Date();
-        expiry.setMinutes(expiry.getMinutes() + 10); // OTP expires in 10 minutes
-
-        user.otpCode = otp;
-        user.otpExpiresAt = expiry;
-        await this.userRepository.save(user);
-
-        // Simulate OTP Email / SMS
-        const emailSent = await this.emailService.sendOtpEmail(user.email, otp);
-
-        if (!emailSent) {
-            // Agar email dispatch fail ho jaye to alert trigger karein
-            throw new BadRequestException('Failed to send verification OTP email. Please try again.');
-        }
-
-        return {
-            message: 'Secure OTP sent successfully to your email.',
-            email: user.email,
-        }
-
+    const user = await this.userRepository.findOne({ where: { email: email.toLowerCase() } });
+    if (!user) {
+        throw new UnauthorizedException('Invalid credentials');
     }
+
+    if (user.role !== role) {
+        throw new UnauthorizedException(`Access denied. Accessing with invalid role privileges.`);
+    }
+
+    const isPasswordMatch = await bcrypt.compare(password, user.passwordHash);
+    if (!isPasswordMatch) {
+        throw new UnauthorizedException('Invalid credentials');
+    }
+
+    // 1. Generate 4-digit secure OTP
+    const otp = Math.floor(1000 + Math.random() * 9000).toString();
+    const expiry = new Date();
+    expiry.setMinutes(expiry.getMinutes() + 10);
+
+    user.otpCode = otp;
+    user.otpExpiresAt = expiry;
+    await this.userRepository.save(user);
+
+    // 2. Fire-and-Forget (Background Processing)
+    // Await mat karein, taaki API hit hotay hi immediately 200 OK mil jaye (~50ms)
+    this.emailService.sendOtpEmail(user.email, otp).catch((error) => {
+        // Agar background me mail fail ho, toh logs me track kar lein
+        console.error(`[Email Failure] Failed to dispatch OTP to ${user.email}:`, error);
+    });
+
+    // 3. Immediate Response to Client
+    return {
+        message: 'Secure OTP sent successfully to your email.',
+        email: user.email,
+    };
+}
 
     // src/auth/auth.service.ts mein baqi functions ke sath ye add karein:
 
