@@ -2,14 +2,21 @@
   "version": 2,
   "builds": [
     {
-      "src": "src/main.ts",
-      "use": "@vercel/node"
+      "src": "dist/main.js",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": [
+          "node_modules/pg/**",
+          "node_modules/pg-protocol/**",
+          "node_modules/pg-types/**"
+        ]
+      }
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "src/main.ts"
+      "dest": "dist/main.js"
     }
   ]
 }
