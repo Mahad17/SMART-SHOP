@@ -4,16 +4,14 @@ import { ValidationPipe } from '@nestjs/common';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import express from 'express';
 
-const expressApp = express();
+const server = express();
 
-export const bootstrap = async () => {
-  // 1. NestJS application ko Express instance se bind karein
+export const createNestServer = async (expressInstance: express.Express) => {
   const app = await NestFactory.create(
     AppModule,
-    new ExpressAdapter(expressApp),
+    new ExpressAdapter(expressInstance),
   );
 
-  // 2. CORS setup
   app.enableCors({
     origin: '*',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
@@ -21,7 +19,6 @@ export const bootstrap = async () => {
     allowedHeaders: 'Content-Type, Accept, Authorization',
   });
 
-  // 3. Global Pipes and Parsers
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -31,16 +28,19 @@ export const bootstrap = async () => {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
-  // 4. Local Development vs Vercel Serverless Handling
-  if (process.env.VERCEL) {
-    await app.init();
-  } else {
-    await app.listen(3000, '0.0.0.0');
-    console.log('Backend is running on http://localhost:3000');
-  }
+  await app.init();
 };
 
-bootstrap();
+// Bootstrap for local development
+if (!process.env.VERCEL) {
+  createNestServer(server).then(() => {
+    server.listen(3000, () => {
+      console.log('Backend is running on http://localhost:3000');
+    });
+  });
+} else {
+  // Lazy-initialize Nest app for Vercel Serverless
+  createNestServer(server);
+}
 
-// 5. Vercel Serverless Function Handler Requirement
-export default expressApp;
+export default server;
