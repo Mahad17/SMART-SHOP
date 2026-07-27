@@ -1,17 +1,51 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Resend } from 'resend';
+import axios from 'axios';
 
 @Injectable()
 export class EmailService {
-  private resend: Resend;
   private readonly logger = new Logger(EmailService.name);
+  private readonly brevoApiUrl = 'https://api.brevo.com/v3/smtp/email';
 
-  constructor(private configService: ConfigService) {
-    this.resend = new Resend(this.configService.get<string>('RESEND_API_KEY'));
+  constructor(private configService: ConfigService) {}
+
+  // Brevo API Request Sender Helper
+  private async sendViaBrevo(to: string, subject: string, htmlContent: string): Promise<boolean> {
+    const apiKey = this.configService.get<string>('BREVO_API_KEY');
+    const senderEmail = this.configService.get<string>('SENDER_EMAIL') || 'smartshop.alert@gmail.com';
+    const senderName = this.configService.get<string>('SENDER_NAME') || 'Smart Shop';
+
+    try {
+      const response = await axios.post(
+        this.brevoApiUrl,
+        {
+          sender: {
+            name: senderName,
+            email: senderEmail,
+          },
+          to: [{ email: to }],
+          subject: subject,
+          htmlContent: htmlContent,
+        },
+        {
+          headers: {
+            'api-key': apiKey,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+        },
+      );
+
+      this.logger.log(`[Email Service] Email sent to ${to} (MessageId: ${response.data?.messageId})`);
+      return true;
+    } catch (error: any) {
+      const errorMsg = error.response?.data?.message || error.message;
+      this.logger.error(`[Email Service] Brevo error sending to ${to}: ${errorMsg}`);
+      return false;
+    }
   }
 
-  // Generic Email sending function
+  // 1. Generic OTP Email Function
   async sendOtpEmail(to: string, otp: string): Promise<boolean> {
     const htmlContent = `
       <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f9fafb; border-radius: 8px;">
@@ -27,47 +61,11 @@ export class EmailService {
       </div>
     `;
 
-    try {
-      const { data, error } = await this.resend.emails.send({
-        from: 'Smart Shop <onboarding@resend.dev>', // Custom domain ke bina Resend dev address testing ke liye use hota hai
-        to: to,
-        subject: 'Smart Shop - Secure OTP Verification Code',
-        html: htmlContent,
-      });
-
-      if (error) {
-        this.logger.error(`[Email Service] Resend error: ${error.message}`);
-        return false;
-      }
-
-      this.logger.log(`[Email Service] Real OTP Email sent to ${to} (ID: ${data?.id})`);
-      return true;
-    } catch (error) {
-      this.logger.error('[Email Service] Error sending email:', error);
-      return false;
-    }
+    return this.sendViaBrevo(to, 'Smart Shop - Secure OTP Verification Code', htmlContent);
   }
 
-  // Transactional Invoice / Notification email function
+  // 2. Transactional Invoice / Notification email function
   async sendWalletTransactionEmail(to: string, subject: string, htmlBody: string): Promise<boolean> {
-    try {
-      const { data, error } = await this.resend.emails.send({
-        from: 'Smart Shop Wallet <onboarding@resend.dev>',
-        to: to,
-        subject: `Smart Shop - ${subject}`,
-        html: htmlBody,
-      });
-
-      if (error) {
-        this.logger.error(`[Email Service] Resend error: ${error.message}`);
-        return false;
-      }
-
-      this.logger.log(`[Email Service] Transaction Email sent to ${to} (ID: ${data?.id})`);
-      return true;
-    } catch (error) {
-      this.logger.error('[Email Service] Error sending transaction email:', error);
-      return false;
-    }
+    return this.sendViaBrevo(to, `Smart Shop - ${subject}`, htmlBody);
   }
 }
