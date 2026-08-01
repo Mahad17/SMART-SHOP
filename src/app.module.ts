@@ -18,6 +18,9 @@ import { WalletController } from './wallet/wallet.controller';
 import { WalletService } from './wallet/wallet.service';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { Price } from './prices/prices.entity';
+import { PriceController } from './prices/prices.controller';
+import { PriceService } from './prices/prices.service';
 
 @Module({
   imports: [
@@ -53,13 +56,13 @@ import { AppService } from './app.service';
             rejectUnauthorized: false,
           },
         },
-        entities: [User, Product, Transaction],
+        entities: [User, Product, Transaction,Price],
       }),
     }),
-    TypeOrmModule.forFeature([User, Product, Transaction]),
+    TypeOrmModule.forFeature([User, Product, Transaction,Price]),
     AuthModule,
   ],
-  controllers: [AppController, AuthController, ProductController, WalletController],
-  providers: [AppService, AuthService, EmailService, ProductService, JwtService, WalletService],
+  controllers: [AppController, AuthController, ProductController, WalletController,PriceController],
+  providers: [AppService, AuthService, EmailService, ProductService, JwtService, WalletService,PriceService],
 })
 export class AppModule {}

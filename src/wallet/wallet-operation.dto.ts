@@ -49,6 +49,10 @@ export class DonateDto {
   @IsString()
   @IsNotEmpty()
   type: string;
+  
+  @IsString()
+  @IsNotEmpty()
+  paymentMethod: string;
 }
 
 export class ClaimCashbackDto {

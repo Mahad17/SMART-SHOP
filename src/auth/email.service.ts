@@ -9,6 +9,27 @@ export class EmailService {
 
   constructor(private configService: ConfigService) {}
 
+
+  // Existing methods ke sath is function ko class me add karein:
+
+async sendResetPasswordOtpEmail(to: string, otp: string): Promise<boolean> {
+  const htmlContent = `
+    <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f9fafb; border-radius: 8px;">
+      <h2 style="color: #29388D; text-align: center;">Smart Shop Security</h2>
+      <p>Hello,</p>
+      <p>We received a request to reset your Smart Shop account password. Your 4-digit verification code is:</p>
+      <div style="text-align: center; margin: 30px 0;">
+        <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #2692D3; background: #fff; padding: 10px 20px; border-radius: 5px; border: 1px solid #e5e7eb;">
+          ${otp}
+        </span>
+      </div>
+      <p style="color: #6b7280; font-size: 12px;">This OTP is confidential and valid for 10 minutes only. If you did not request a password reset, please ignore this email.</p>
+    </div>
+  `;
+
+  return this.sendViaBrevo(to, 'Smart Shop - Password Reset Verification Code', htmlContent);
+}
+
   // Brevo API Request Sender Helper
   private async sendViaBrevo(to: string, subject: string, htmlContent: string): Promise<boolean> {
     const apiKey = this.configService.get<string>('BREVO_API_KEY');

@@ -4,6 +4,8 @@ import { AuthService } from './auth.service';
 import { SignupDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { ForgotPasswordDto } from './dto/forgetpassword.dto';
+import { ResetPasswordDto } from './dto/resetpassword-dto';
 
 @Controller('auth')
 export class AuthController {
@@ -23,6 +25,24 @@ export class AuthController {
     console.log('login hit');
 
     return this.authService.login(loginDto);
+  }
+
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(forgotPasswordDto);
+  }
+
+  @Post('verify-reset-otp')
+  @HttpCode(HttpStatus.OK)
+  async verifyResetOtp(@Body() verifyOtpDto: VerifyOtpDto) {
+    return this.authService.verifyResetOtp(verifyOtpDto);
+  }
+
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
+    return this.authService.resetPassword(resetPasswordDto);
   }
 
   @Post('resend-otp')

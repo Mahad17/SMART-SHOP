@@ -9,6 +9,8 @@ import { VerifyOtpDto } from './dto/verify-otp.dto';
 import * as bcrypt from 'bcrypt';
 import { EmailService } from './email.service';
 import { JwtService } from '@nestjs/jwt';
+import { ResetPasswordDto } from './dto/resetpassword-dto';
+import { ForgotPasswordDto } from './dto/forgetpassword.dto';
 
 @Injectable()
 export class AuthService {
@@ -19,6 +21,90 @@ export class AuthService {
         private jwtService: JwtService, // Inject JWT Service
     ) { }
 
+async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {
+  const { email } = forgotPasswordDto;
+
+  const user = await this.userRepository.findOne({ where: { email: email.toLowerCase() } });
+  if (!user) {
+    throw new NotFoundException('User with this email address does not exist.');
+  }
+
+  // 4-digit OTP code generate karein (Existing login flow ki tarah)
+  const otp = Math.floor(1000 + Math.random() * 9000).toString();
+  const expiry = new Date();
+  expiry.setMinutes(expiry.getMinutes() + 10);
+
+  user.otpCode = otp;
+  user.otpExpiresAt = expiry;
+  await this.userRepository.save(user);
+
+  // Send Reset Email via Brevo
+  this.emailService.sendResetPasswordOtpEmail(user.email, otp).catch((error) => {
+    console.error(`[Email Failure] Failed to send Reset OTP to ${user.email}:`, error);
+  });
+
+  return {
+    message: 'A 4-digit password reset OTP has been sent to your email.',
+    email: user.email,
+  };
+}
+
+// 2. VERIFY RESET OTP (Mobile App Screen Step 2 Validation)
+async verifyResetOtp(verifyOtpDto: VerifyOtpDto) {
+  const { email, otpCode } = verifyOtpDto;
+
+  const user = await this.userRepository.findOne({ where: { email: email.toLowerCase() } });
+  if (!user) {
+    throw new NotFoundException('User not found.');
+  }
+
+  if (!user.otpCode || user.otpCode !== otpCode) {
+    throw new BadRequestException('Invalid OTP code.');
+  }
+
+  if (new Date() > user.otpExpiresAt) {
+    throw new BadRequestException('OTP code has expired.');
+  }
+
+  return {
+    message: 'OTP verified successfully. You can now set a new password.',
+    email: user.email,
+  };
+}
+
+// 3. RESET PASSWORD (Update Password & Clear OTP)
+async resetPassword(resetPasswordDto: ResetPasswordDto) {
+  const { email, otpCode, newPassword } = resetPasswordDto;
+
+  const user = await this.userRepository.findOne({ where: { email: email.toLowerCase() } });
+  if (!user) {
+    throw new NotFoundException('User not found.');
+  }
+
+  // Double verification check
+  if (!user.otpCode || user.otpCode !== otpCode) {
+    throw new BadRequestException('Invalid or unauthorized OTP token.');
+  }
+
+  if (new Date() > user.otpExpiresAt) {
+    throw new BadRequestException('OTP code has expired.');
+  }
+
+  // Hash new password using bcrypt
+  const salt = await bcrypt.genSalt();
+  user.passwordHash = await bcrypt.hash(newPassword, salt);
+
+  // Clear OTP attributes
+  user.otpCode ;
+  user.otpExpiresAt ;
+
+  await this.userRepository.save(user);
+
+  return {
+    message: 'Password reset successful. You can now login with your new password.',
+  };
+}
+    
     // 1. SIGNUP API
     async signup(signupDto: SignupDto) {
         const { firstName, lastName, email, phoneNumber, password } = signupDto;
