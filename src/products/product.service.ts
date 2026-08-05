@@ -1,8 +1,8 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Product } from './product.entity';
-import { CreateProductDto } from './product-dto';
+import { CreateProductDto, UpdateProductDto } from './product-dto';
 
 @Injectable()
 export class ProductService implements OnModuleInit {
@@ -56,4 +56,21 @@ export class ProductService implements OnModuleInit {
   // 3. Clean return statement binary comma error ke bina
   return await this.productRepository.save(create);
 }
+
+async update(id: any, body: UpdateProductDto) {
+    const product = await this.productRepository.findOne({ where: { id } });
+    if (!product) {
+      throw new NotFoundException(`Product with ID ${id} not found`);
+    }
+    Object.assign(product, body);
+    return await this.productRepository.save(product);
+  }
+
+  async remove(id: any): Promise<{ message: string }> {
+    const result = await this.productRepository.delete(id);
+    if (result.affected === 0) {
+      throw new NotFoundException(`Product with ID ${id} not found`);
+    }
+    return { message: 'Product deleted successfully' };
+  }
 }

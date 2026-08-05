@@ -9,6 +9,10 @@ export class SignupDto {
   @IsString()
   lastName: string;
 
+  // @IsNotEmpty()
+  @IsString()
+  role: string;
+
   @IsEmail({}, { message: 'Invalid email format' })
   email: string;
 

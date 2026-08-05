@@ -7,10 +7,13 @@ import { EmailService } from './email.service';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './strategies/auth.strategy';
+import { Transaction } from 'src/transaction/transaction.entity';
+import { Product } from 'src/products/product.entity';
 
 @Module({
   imports:[
-    TypeOrmModule.forFeature([User]),
+
+    TypeOrmModule.forFeature([User,Transaction,Product]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({
       secret: 'SUPER_SECRET_KEY_123', // Real app mein isey .env file mein rakhein
