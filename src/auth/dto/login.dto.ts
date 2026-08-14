@@ -2,7 +2,7 @@ import { IsEmail, IsNotEmpty, IsString, IsEnum } from 'class-validator';
 import { UserRole } from '../entities/user.entity';
 
 export class LoginDto {
-  @IsEmail()
+  @IsString()
   email: string;
 
   @IsNotEmpty()

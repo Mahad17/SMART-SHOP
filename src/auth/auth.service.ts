@@ -32,20 +32,20 @@ export class AuthService {
     ) { }
 
     async getDashboardStats() {
-    // 1. Total Users Count
-    const totalUsers = await this.userRepository.count();
+        // 1. Total Users Count
+        const totalUsers = await this.userRepository.count();
 
-    // 2. Total Products Count
-    const totalProducts = await this.productRepository.count();
+        // 2. Total Products Count
+        const totalProducts = await this.productRepository.count();
 
-    // 3. Total Donations Sum
-    
-    return {
-      totalUsers,
-      totalProducts,
-      
-    };
-  }
+        // 3. Total Donations Sum
+
+        return {
+            totalUsers,
+            totalProducts,
+
+        };
+    }
     async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {
         const { email } = forgotPasswordDto;
 
@@ -136,9 +136,15 @@ export class AuthService {
         // 🔥 role destructure hata diya — client se trust nahi karna
 
         // Check existing
-        const existingUser = await this.userRepository.findOne({ where: { email } });
+        const existingUser =
+            await this.userRepository.findOne({ where: { email } });
         if (existingUser) {
             throw new BadRequestException('Email already registered');
+        }
+        const existingUserPhoneNumber =
+            await this.userRepository.findOne({ where: { phoneNumber } });
+        if (existingUserPhoneNumber) {
+            throw new BadRequestException('Phone number already registered');
         }
 
         // Hash Password
@@ -190,7 +196,13 @@ export class AuthService {
     async login(loginDto: LoginDto) {
         const { email, password, role } = loginDto;
 
-        const user = await this.userRepository.findOne({ where: { email: email.toLowerCase() } });
+        // const user = await this.userRepository.findOne({ where: { email: email.toLowerCase() } });
+        const user = await this.userRepository.findOne({
+            where: [
+                { email: email.toLowerCase() },
+                { phoneNumber: email },
+            ],
+        });
         if (!user) {
             throw new UnauthorizedException('Invalid credentials');
         }
@@ -428,39 +440,39 @@ export class AuthService {
     }
 
     async exportFilteredTransactions(query: GetReportsQueryDto): Promise<string> {
-    const { type, search } = query;
+        const { type, search } = query;
 
-    const queryBuilder = this.transRepository
-      .createQueryBuilder('tx')
-      .leftJoinAndSelect('tx.user', 'user')
-      .orderBy('tx.createdAt', 'DESC');
+        const queryBuilder = this.transRepository
+            .createQueryBuilder('tx')
+            .leftJoinAndSelect('tx.user', 'user')
+            .orderBy('tx.createdAt', 'DESC');
 
-    if (type && type !== 'all') {
-      queryBuilder.andWhere('tx.type = :type', { type: type.toUpperCase() });
+        if (type && type !== 'all') {
+            queryBuilder.andWhere('tx.type = :type', { type: type.toUpperCase() });
+        }
+
+        if (search) {
+            queryBuilder.andWhere(
+                '(user.firstName LIKE :search OR user.lastName LIKE :search OR user.email LIKE :search OR tx.details LIKE :search)',
+                { search: `%${search}%` },
+            );
+        }
+
+        const transactions = await queryBuilder.getMany();
+
+        const formattedData = transactions.map((tx) => ({
+            'TX ID': tx.id,
+            'User Name': tx.user ? `${tx.user.firstName || ''} ${tx.user.lastName || ''}`.trim() : 'Anonymous',
+            'User Email': tx.user?.email || 'N/A',
+            'Type': tx.type,
+            'Details': tx.details || 'N/A',
+            'Amount (PKR)': tx.amount,
+            'Date': tx.createdAt ? new Date(tx.createdAt).toLocaleDateString() : 'N/A',
+        }));
+
+        const parser = new Parser();
+        return parser.parse(formattedData);
     }
-
-    if (search) {
-      queryBuilder.andWhere(
-        '(user.firstName LIKE :search OR user.lastName LIKE :search OR user.email LIKE :search OR tx.details LIKE :search)',
-        { search: `%${search}%` },
-      );
-    }
-
-    const transactions = await queryBuilder.getMany();
-
-    const formattedData = transactions.map((tx) => ({
-      'TX ID': tx.id,
-      'User Name': tx.user ? `${tx.user.firstName || ''} ${tx.user.lastName || ''}`.trim() : 'Anonymous',
-      'User Email': tx.user?.email || 'N/A',
-      'Type': tx.type,
-      'Details': tx.details || 'N/A',
-      'Amount (PKR)': tx.amount,
-      'Date': tx.createdAt ? new Date(tx.createdAt).toLocaleDateString() : 'N/A',
-    }));
-
-    const parser = new Parser();
-    return parser.parse(formattedData);
-  }
     // 2. Fetch Summary Statistics for Admin Cards
     async getReportsSummary() {
         const totalVolume = await this.transRepository
