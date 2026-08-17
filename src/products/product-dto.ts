@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
+import { IsIn, IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
 
 export class CreateProductDto {
   @IsString()
@@ -16,6 +16,15 @@ export class CreateProductDto {
   @IsString()
   @IsNotEmpty()
   image: string;
+
+  @IsString()
+  @IsIn(['local', 'link'])
+  @IsOptional()
+  imageType?: 'local' | 'link';
+
+  @IsString()
+  @IsOptional()
+  description?: string;
 }
 export class UpdateProductDto {
   @IsString()
@@ -34,4 +43,13 @@ export class UpdateProductDto {
   @IsString()
   @IsOptional()
   image?: string;
+
+  @IsString()
+  @IsIn(['local', 'link'])
+  @IsOptional()
+  imageType?: 'local' | 'link';
+
+  @IsString()
+  @IsOptional()
+  description?: string;
 }

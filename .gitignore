@@ -3,6 +3,10 @@
 /node_modules
 /build
 
+# uploaded product images (keep the folder, ignore the files)
+/uploads/**/*
+!/uploads/**/.gitkeep
+
 # Logs
 logs
 *.log

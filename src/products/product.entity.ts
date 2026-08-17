@@ -14,6 +14,9 @@ export class Product {
   @Column()
   image: string;
 
+  @Column({ type: 'varchar', default: 'link' })
+  imageType: 'local' | 'link';
+
   @Column()
   category: string;
 

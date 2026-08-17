@@ -4,6 +4,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import express from 'express';
 import helmet from 'helmet';
+import { join } from 'path';
 
 const server = express();
 
@@ -13,12 +14,25 @@ export const createNestServer = async (expressInstance: express.Express) => {
     new ExpressAdapter(expressInstance),
   );
 
+  // Trust Render's reverse proxy so req.protocol reports 'https' correctly
+  // (needed to build correct absolute URLs for uploaded images).
+  expressInstance.set('trust proxy', 1);
+
   // 1. Helmet: Essential HTTP Security Headers (XSS, Clickjacking, MIME Sniffing protection)
-  app.use(helmet());
+  // crossOriginResourcePolicy relaxed so product images under /uploads can be
+  // loaded cross-origin by the admin portal and mobile app (CORS is also open below).
+  app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 
   // 2. Body Payload Size Limit (Prevents payload-based DoS attacks)
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ limit: '10mb', extended: true }));
+
+  // 2b. Serve locally-uploaded product images.
+  // NOTE: this folder lives on local disk — on serverless hosts (e.g. Vercel)
+  // or Render deploys without a persistent disk, uploaded files do NOT survive
+  // redeploys/restarts. Fine for the current Render deployment's uptime, but
+  // worth moving to real object storage (S3/Cloudinary) before relying on it long-term.
+  app.use('/uploads', express.static(join(process.cwd(), 'uploads')));
 
   // 3. CORS Configuration
   app.enableCors({

@@ -48,11 +48,18 @@ export class ProductService implements OnModuleInit {
   }
  async save(body: CreateProductDto) {
   // 1. Body se variables destructure karein
-  const { name, price, category, image } = body;
-  
+  const { name, price, category, image, imageType, description } = body;
+
   // 2. Repository instance create karein
-  const create = this.productRepository.create({ name, price, category, image });
-  
+  const create = this.productRepository.create({
+    name,
+    price,
+    category,
+    image,
+    imageType: imageType || 'link',
+    description,
+  });
+
   // 3. Clean return statement binary comma error ke bina
   return await this.productRepository.save(create);
 }
