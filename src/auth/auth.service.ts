@@ -284,6 +284,21 @@ export class AuthService {
         };
     }
 
+    async getProfile(id: string) {
+        const user = await this.userRepository.findOne({ where: { id } });
+        if (!user) {
+            throw new NotFoundException('User not found.');
+        }
+        return {
+            id: user.id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            phoneNumber: user.phoneNumber,
+            role: user.role,
+            balance: user.balance,
+        };
+    }
     async getAll(role?: string) {
         // Agar role param pass hua ho aur valid UserRole value ho
         if (role && role !== 'all') {

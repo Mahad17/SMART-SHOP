@@ -89,6 +89,10 @@ export class AuthController {
   async getStats() {
     return this.authService.getDashboardStats();
   }
+  @Get('profile/:id')
+  async getProfile(@Param('id') id: string) {
+    return this.authService.getProfile(id);
+  }
   @Get('users/all')
   getAllUsersByRole(@Query('role') role?: string) {
     // console.log('hit on all users');

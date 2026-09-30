@@ -297,7 +297,7 @@ export class WalletService {
     }
   }
 
-  // 3. CLAIM 50% ANNUAL DONATION CASHBACK
+  // 3. CLAIM 25% ANNUAL DONATION CASHBACK
   async claimAnnualDonationCashback(userId: string) {
     const currentYear = new Date().getFullYear();
     const queryRunner = this.dataSource.createQueryRunner();
@@ -310,7 +310,7 @@ export class WalletService {
       if (!user) throw new NotFoundException('User not found');
 
       if (user.hasClaimedDonationCashback) {
-        throw new BadRequestException('You have already claimed your 50% donation cashback for this year.');
+        throw new BadRequestException('You have already claimed your 25% donation cashback for this year.');
       }
 
       const startOfYear = new Date(`${currentYear}-01-01T00:00:00.000Z`);
@@ -328,7 +328,7 @@ export class WalletService {
         throw new BadRequestException('No donation logs found for the current calendar year to process cashback.');
       }
 
-      const bulkCashback = totalDonated * 0.50;
+      const bulkCashback = totalDonated * 0.25;
       const userBalance = parseFloat(user.balance as any);
 
       user.balance = userBalance + bulkCashback;
@@ -340,7 +340,7 @@ export class WalletService {
         type: TransactionType.CASHBACK_CLAIM,
         amount: bulkCashback,
         cashbackAmount: 0,
-        details: `Claimed 50% Annual Donation Bulk Cashback for Year ${currentYear}`,
+        details: `Claimed 25% Annual Donation Bulk Cashback for Year ${currentYear}`,
       });
       await queryRunner.manager.save(Transaction, newTransaction);
 
@@ -350,7 +350,7 @@ export class WalletService {
         <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #eff6ff; border-radius: 8px;">
           <h2 style="color: #1d4ed8;">Annual Bulk Cashback Approved!</h2>
           <p>Hi ${user.firstName},</p>
-          <p>Your annual compilation rewards are here! Since your total donation this year was PKR ${totalDonated.toFixed(2)}, we have credited a 50% reward back into your system wallet.</p>
+          <p>Your annual compilation rewards are here! Since your total donation this year was PKR ${totalDonated.toFixed(2)}, we have credited a 25% reward back into your system wallet.</p>
           <p style="font-size: 18px; color: #1e40af;"><b>Amount Credited: +PKR ${bulkCashback.toFixed(2)}</b></p>
           <p>Current Total Balance: <b>PKR ${parseFloat(updatedUser.balance as any).toFixed(2)}</b></p>
         </div>
